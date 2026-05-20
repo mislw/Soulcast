@@ -4,7 +4,11 @@ import React, { useEffect, useState } from "react";
 
 import type { PersonaAssets, PersonaResponse } from "@ta/shared";
 
-import { getPersonaPreview } from "../../lib/api";
+import {
+  getPersonaPreview,
+  getPersonaPreviewStorageKey,
+  getPersonaTemplateStorageKey,
+} from "../../lib/api";
 import { PersonaSummary } from "./persona-summary";
 
 type PersonaPreviewLoaderProps = {
@@ -24,8 +28,10 @@ export function PersonaPreviewLoader({ personaId }: PersonaPreviewLoaderProps) {
     let cancelled = false;
 
     async function loadPreview() {
-      const storageKey = `persona-preview:${personaId}`;
-      const cachedValue = sessionStorage.getItem(storageKey);
+      const sessionKey = getPersonaPreviewStorageKey(personaId);
+      const templateKey = getPersonaTemplateStorageKey(personaId);
+      const cachedValue =
+        sessionStorage.getItem(sessionKey) ?? localStorage.getItem(templateKey);
 
       if (cachedValue) {
         try {
@@ -35,14 +41,22 @@ export function PersonaPreviewLoader({ personaId }: PersonaPreviewLoaderProps) {
             setPayload(cachedPayload);
           }
 
+          sessionStorage.setItem(sessionKey, cachedValue);
+          localStorage.setItem(templateKey, cachedValue);
+
           return;
         } catch {
-          sessionStorage.removeItem(storageKey);
+          sessionStorage.removeItem(sessionKey);
+          localStorage.removeItem(templateKey);
         }
       }
 
       try {
         const nextPayload = await getPersonaPreview(personaId);
+        const serializedPayload = JSON.stringify(nextPayload);
+
+        sessionStorage.setItem(sessionKey, serializedPayload);
+        localStorage.setItem(templateKey, serializedPayload);
 
         if (!cancelled) {
           setPayload(nextPayload);

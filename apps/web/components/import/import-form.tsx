@@ -2,7 +2,12 @@
 
 import React, { useState } from "react";
 
-import { createImportDraft, getPersonaPreview } from "../../lib/api";
+import {
+  createImportDraft,
+  getPersonaPreview,
+  getPersonaPreviewStorageKey,
+  getPersonaTemplateStorageKey,
+} from "../../lib/api";
 
 type SourceMode = "paste" | "upload";
 
@@ -47,7 +52,9 @@ export function ImportForm() {
 
     try {
       const preview = await getPersonaPreview(draft.personaId, sourceText, selfProfile);
-      sessionStorage.setItem(`persona-preview:${draft.personaId}`, JSON.stringify(preview));
+      const serializedPreview = JSON.stringify(preview);
+      sessionStorage.setItem(getPersonaPreviewStorageKey(draft.personaId), serializedPreview);
+      localStorage.setItem(getPersonaTemplateStorageKey(draft.personaId), serializedPreview);
       window.location.assign(`/persona/${draft.personaId}`);
     } catch {
       setSubmitError("生成人格档案时出了点问题，请稍后再试。");

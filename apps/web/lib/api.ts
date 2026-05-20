@@ -6,6 +6,9 @@ import {
   type SelfProfileInput,
 } from "@ta/shared";
 
+const PERSONA_PREVIEW_STORAGE_PREFIX = "persona-preview:";
+const PERSONA_TEMPLATE_STORAGE_PREFIX = "persona-template:";
+
 export function createImportDraft() {
   return {
     personaId: "user-1",
@@ -298,4 +301,12 @@ export async function getChatPreview(personaId: string): Promise<{
     policyBoundaries: fallback.assets.policy.boundaries,
     history: [],
   };
+}
+
+export function getPersonaPreviewStorageKey(personaId: string): string {
+  return `${PERSONA_PREVIEW_STORAGE_PREFIX}${personaId}`;
+}
+
+export function getPersonaTemplateStorageKey(personaId: string): string {
+  return `${PERSONA_TEMPLATE_STORAGE_PREFIX}${personaId}`;
 }

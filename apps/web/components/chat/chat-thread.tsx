@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState } from "react";
 
-import { asNormalizedScore } from "@ta/shared";
-import type { PersonaResponse } from "@ta/shared";
+import { asNormalizedScore, type PersonaResponse } from "@ta/shared";
 
 type ChatThreadProps = {
   thread: {
@@ -83,7 +82,7 @@ function createInitialHistory(
       label: "会话说明",
       text: apiBaseUrl
         ? "当前会话已连接真实聊天接口。"
-        : "当前会话运行在本地预览模式，配置 NEXT_PUBLIC_API_BASE_URL 后可切换到真实回复。",
+        : "当前会话运行在本地预览模式，没连上 API 时也会先给你一个本地回复。",
     },
     {
       id: "user-1",
@@ -124,59 +123,61 @@ export function ChatThread({ thread, apiBaseUrl }: ChatThreadProps) {
   const [status, setStatus] = useState(
     normalizedApiBaseUrl ? "已连接真实回复接口" : "当前是本地预览模式",
   );
-  const [isPending, startTransition] = useTransition();
+  const [isSending, setIsSending] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextMessage = draftMessage.trim();
+
     if (!nextMessage) {
       setStatus("先输入一句话，分身才能继续接住你。");
       return;
     }
 
-    startTransition(async () => {
-      let nextReply: PersonaResponse;
-      let nextStatus: string;
+    setIsSending(true);
 
-      if (normalizedApiBaseUrl) {
-        const liveReply = await requestChatReply(normalizedApiBaseUrl, {
-          personaId: thread.personaId,
-          message: nextMessage,
-        });
+    let nextReply: PersonaResponse;
+    let nextStatus: string;
 
-        if (liveReply) {
-          nextReply = liveReply;
-          nextStatus = "刚刚这条回复来自实时 API。";
-        } else {
-          nextReply = buildLocalReply(nextMessage, reply);
-          nextStatus = "实时接口暂时失败，已退回本地预览回复。";
-        }
+    if (normalizedApiBaseUrl) {
+      const liveReply = await requestChatReply(normalizedApiBaseUrl, {
+        personaId: thread.personaId,
+        message: nextMessage,
+      });
+
+      if (liveReply) {
+        nextReply = liveReply;
+        nextStatus = "刚刚这条回复来自实时 API。";
       } else {
         nextReply = buildLocalReply(nextMessage, reply);
-        nextStatus = "已生成本地预览回复。";
+        nextStatus = "实时接口暂时失败，已退回本地预览回复。";
       }
+    } else {
+      nextReply = buildLocalReply(nextMessage, reply);
+      nextStatus = "已生成本地预览回复。";
+    }
 
-      setReply(nextReply);
-      setStatus(nextStatus);
-      setHistory((previous) => [
-        ...previous,
-        {
-          id: `user-${previous.length + 1}`,
-          role: "user",
-          label: "你刚刚的问题",
-          text: nextMessage,
-        },
-        {
-          id: `persona-${previous.length + 2}`,
-          role: "persona",
-          label: "分身回复预览",
-          text: nextReply.text,
-          responseMeta: nextReply,
-        },
-      ]);
-      setDraftMessage("");
-    });
+    setReply(nextReply);
+    setStatus(nextStatus);
+    setHistory((previous) => [
+      ...previous,
+      {
+        id: `user-${previous.length + 1}`,
+        role: "user",
+        label: "你刚刚的问题",
+        text: nextMessage,
+      },
+      {
+        id: `persona-${previous.length + 2}`,
+        role: "persona",
+        label: "分身回复预览",
+        text: nextReply.text,
+        responseMeta: nextReply,
+      },
+    ]);
+    setDraftMessage("");
+    setIsSending(false);
   }
 
   return (
@@ -193,8 +194,8 @@ export function ChatThread({ thread, apiBaseUrl }: ChatThreadProps) {
             <p className="preview-text">{item.text}</p>
             {item.responseMeta ? (
               <p className="metric-line">
-                情绪：{item.responseMeta.emotion} · 节奏：{item.responseMeta.pacing} ·
-                置信度：{Math.round(item.responseMeta.confidence * 100)}%
+                情绪：{item.responseMeta.emotion} · 节奏：{item.responseMeta.pacing} · 置信度：
+                {Math.round(item.responseMeta.confidence * 100)}%
               </p>
             ) : null}
           </article>
@@ -233,7 +234,7 @@ export function ChatThread({ thread, apiBaseUrl }: ChatThreadProps) {
                 setStatus("已清空输入框。");
               }}
             >
-              ·
+              ×
             </button>
           </div>
         </div>
@@ -246,12 +247,12 @@ export function ChatThread({ thread, apiBaseUrl }: ChatThreadProps) {
           onChange={(event) => {
             setDraftMessage(event.target.value);
           }}
-          placeholder="输入你的问题，和分身聊聊吧……"
+          placeholder="输入你的问题，和分身聊聊吧..."
         />
 
         <div className="chat-actions">
-          <button type="submit" className="btn-primary" disabled={isPending}>
-            {isPending ? "发送中…" : "发送消息"}
+          <button type="submit" className="btn-primary" disabled={isSending}>
+            {isSending ? "发送中..." : "发送消息"}
           </button>
           <p className="status-note">{status}</p>
         </div>
