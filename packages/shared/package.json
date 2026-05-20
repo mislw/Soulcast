@@ -1,0 +1,15 @@
+{
+  "name": "@ta/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc --pretty false --noEmit src/index.ts --module esnext --target es2022 --moduleResolution bundler --verbatimModuleSyntax --strict --skipLibCheck",
+    "lint": "tsc --pretty false --noEmit src/index.ts --module esnext --target es2022 --moduleResolution bundler --verbatimModuleSyntax --strict --skipLibCheck",
+    "test": "tsc --pretty false --noEmit src/index.ts --module esnext --target es2022 --moduleResolution bundler --verbatimModuleSyntax --strict --skipLibCheck"
+  }
+}

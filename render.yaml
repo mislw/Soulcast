@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ta-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./services/api/Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3001
+      - key: PYTHON_BIN
+        value: python3
+      - key: DISTILLER_WORKDIR
+        value: services/distiller
+      - key: WEB_ORIGIN
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false

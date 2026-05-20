@@ -1,0 +1,19 @@
+{
+  "name": "@ta/web",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "test": "node --import tsx --test tests/persona-flow.spec.ts"
+  },
+  "dependencies": {
+    "@ta/shared": "workspace:*",
+    "next": "^15.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "tsx": "^4.20.6"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+.pnpm-store/
+*.log
+*.pid
+.next/
+.pytest_cache/
+__pycache__/
+*.egg-info/
