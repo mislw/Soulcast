@@ -27,21 +27,15 @@ test("导入页渲染聊天导入和自我描述模块", async () => {
   assert.match(markup, /name="source"/);
 });
 
-test("人格页渲染档案预览和聊天跳转", async () => {
+test("人格页渲染档案页头和加载提示", async () => {
   const markup = renderToStaticMarkup(
     await PersonaPage({
       params: Promise.resolve({ id: "user-1" }),
-      searchParams: Promise.resolve({
-        freeformNotes: "我是那种会认真听你说完，再慢慢回复的人。",
-      }),
     }),
   );
 
-  assert.match(markup, /你的数字人格档案（草稿）/);
-  assert.match(markup, /记忆卡片/);
-  assert.match(markup, /边界与禁区/);
-  assert.match(markup, /示例回复/);
-  assert.match(markup, /\/chat\/user-1/);
+  assert.match(markup, /你的人格档案（草稿）/);
+  assert.match(markup, /正在整理你的人格档案，请稍等一下/);
 });
 
 test("聊天页渲染中文对话预览和边界提示", async () => {

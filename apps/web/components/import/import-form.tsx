@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-import { createImportDraft } from "../../lib/api";
+import { createImportDraft, getPersonaPreview } from "../../lib/api";
 
 type SourceMode = "paste" | "upload";
 
@@ -10,6 +10,8 @@ export function ImportForm() {
   const draft = createImportDraft();
   const [sourceText, setSourceText] = useState(draft.sourceText);
   const [sourceMode, setSourceMode] = useState<SourceMode>("paste");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -23,8 +25,38 @@ export function ImportForm() {
     setSourceMode("upload");
   }
 
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!sourceText.trim()) {
+      setSubmitError("请先粘贴或上传聊天记录。");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const formData = new FormData(event.currentTarget);
+    const selfProfile = {
+      speakingStyle: String(formData.get("speakingStyle") ?? ""),
+      values: String(formData.get("values") ?? ""),
+      responsePatterns: String(formData.get("responsePatterns") ?? ""),
+      boundaries: String(formData.get("boundaries") ?? ""),
+      freeformNotes: String(formData.get("freeformNotes") ?? ""),
+    };
+
+    try {
+      const preview = await getPersonaPreview(draft.personaId, sourceText, selfProfile);
+      sessionStorage.setItem(`persona-preview:${draft.personaId}`, JSON.stringify(preview));
+      window.location.assign(`/persona/${draft.personaId}`);
+    } catch {
+      setSubmitError("生成人格档案时出了点问题，请稍后再试。");
+      setIsSubmitting(false);
+    }
+  }
+
   return (
-    <form action={`/persona/${draft.personaId}`} method="get" className="form-shell">
+    <form onSubmit={handleSubmit} className="form-shell">
       <div className="source-grid">
         <div style={{ display: "grid", gap: 16 }}>
           <div>
@@ -137,7 +169,7 @@ export function ImportForm() {
 
         <label className="detail-card label-stack">
           我平时怎么回应别人
-          <span className="field-caption">例如：先安慰，再帮对方理清问题，再给建议。</span>
+          <span className="field-caption">例如：先安慰，再帮对方理清问题，最后给建议。</span>
           <textarea
             name="responsePatterns"
             defaultValue={draft.selfProfile.responsePatterns}
@@ -148,7 +180,7 @@ export function ImportForm() {
 
         <label className="detail-card label-stack">
           哪些内容不该被模仿
-          <span className="field-caption">例如：不要写得太攻击、不要伪造我的实时状态。</span>
+          <span className="field-caption">例如：不要写得太攻击，不要伪造我的实时状态。</span>
           <textarea
             name="boundaries"
             defaultValue={draft.selfProfile.boundaries}
@@ -171,15 +203,16 @@ export function ImportForm() {
         </label>
       </div>
 
-      <input type="hidden" name="personaId" value={draft.personaId} />
-
       <div className="header-actions" style={{ justifyContent: "space-between" }}>
         <p className="helper-note">
           下一步会进入人格档案预览页，你可以先看“像不像我”，再决定是否进入聊天页。
         </p>
-        <button type="submit" className="btn-primary">
-          生成人格档案
-        </button>
+        <div style={{ display: "grid", gap: 8 }}>
+          {submitError ? <p className="helper-note">{submitError}</p> : null}
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "正在生成..." : "生成人格档案"}
+          </button>
+        </div>
       </div>
     </form>
   );
